@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025 Junyong Lee
+
 #pragma once
 
 #include <condition_variable>
