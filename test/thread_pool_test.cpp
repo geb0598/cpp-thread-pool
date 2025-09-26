@@ -252,3 +252,93 @@ TEST_F(ThreadPoolTest, DestructorHandlesNoTasks) {
     }
     SUCCEED();
 }
+
+TEST_F(ThreadPoolTest, EnqueueTaskThatEnqueuesMoreTasks) {
+    ThreadPool pool(2);
+    std::atomic<int> counter = 0;
+    std::promise<void> promise;
+    auto future = promise.get_future();
+
+    pool.Enqueue([&]() {
+        counter++;
+        pool.Enqueue([&]() {
+            counter++;
+            promise.set_value();
+        });
+    });
+
+    future.wait();
+    EXPECT_EQ(counter.load(), 2);
+}
+
+TEST_F(ThreadPoolTest, DestructorHandlesPendingTasks) {
+    std::atomic<int> completed_tasks = 0;
+    {
+        ThreadPool pool(1);
+        // Block the only thread
+        pool.Enqueue([&]() {
+            simulate_work(100);
+            completed_tasks++;
+        });
+
+        // Enqueue more tasks that will be pending
+        for (int i = 0; i < 3; ++i) {
+            pool.Enqueue([&]() {
+                completed_tasks++;
+            });
+        }
+    } // Destructor is called here, should wait for all 4 tasks
+
+    EXPECT_EQ(completed_tasks.load(), 4);
+}
+
+TEST_F(ThreadPoolTest, StressTestWithManyShortTasks) {
+    ThreadPool pool(std::thread::hardware_concurrency());
+    const int num_tasks = 10000;
+    std::atomic<int> counter = 0;
+
+    {
+        std::vector<std::future<void>> futures;
+        for (int i = 0; i < num_tasks; ++i) {
+            futures.push_back(pool.Enqueue([&]() {
+                counter++;
+            }));
+        }
+
+        for(auto& f : futures) {
+            f.get();
+        }
+    }
+
+    EXPECT_EQ(counter.load(), num_tasks);
+}
+
+TEST_F(ThreadPoolTest, CorrectlyCalculatesPartialSum) {
+    const size_t num_threads = 8;
+    ThreadPool pool(num_threads);
+    const size_t vector_size = 10000000;
+    const int chunk_size = vector_size / num_threads;
+    std::vector<long long> numbers(vector_size);
+    std::iota(numbers.begin(), numbers.end(), 1);
+
+    std::vector<std::future<long long>> futures;
+    for (size_t i = 0; i < num_threads; ++i) {
+        futures.push_back(pool.Enqueue([&numbers, i, chunk_size, num_threads]() {
+            long long partial_sum = 0;
+            size_t start = i * chunk_size;
+            size_t end = (i == num_threads - 1) ? numbers.size() : (i + 1) * chunk_size;
+            for (size_t j = start; j < end; ++j) {
+                partial_sum += numbers[j];
+            }
+            return partial_sum;
+        }));
+    }
+
+    long long total_sum = 0;
+    for (auto& future : futures) {
+        total_sum += future.get();
+    }
+
+    long long expected_sum = (static_cast<long long>(vector_size) * (vector_size + 1)) / 2;
+    EXPECT_EQ(total_sum, expected_sum);
+}
