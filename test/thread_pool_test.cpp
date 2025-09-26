@@ -131,8 +131,7 @@ TEST_F(ThreadPoolTest, ForEachWithSharedResource) {
     // std::iota(data.begin(), data.end(), 0);
 
     pool.ForEach(data.begin(), data.end(), [&](int& x) {
-        counter++;
-        x = counter.load(); // Assign unique value to each element
+        x = ++counter; // Atomically increment and assign
     });
 
     EXPECT_EQ(counter.load(), 1000);
