@@ -47,7 +47,7 @@ void feature_demonstration() {
 void performance_comparison() {
     std::cout << "--- Performance Comparison ---" << std::endl;
 
-    const size_t data_size = 2000000;
+    const size_t data_size = 100'000'000;
     std::vector<double> data(data_size);
     std::iota(data.begin(), data.end(), 1.0); // Fill with 1.0, 2.0, ...
 

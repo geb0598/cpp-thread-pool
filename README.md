@@ -1,63 +1,146 @@
 # C++ Thread Pool
 
-A simple, robust, and feature-rich thread pool implementation in C++17.
+A modern and feature-rich C++17 thread pool implementation designed for performance and ease of use.
+
+## Description
+
+This project provides a versatile and efficient thread pool that can be easily integrated into any C++ project. It supports various parallel programming patterns, including task enqueuing, parallel for-each, and transform-reduce, making it a powerful tool for accelerating computationally intensive applications.
 
 ## Features
 
--   **Simple API:** Easily enqueue tasks and get results via `std::future`.
--   **Parallel Algorithms:** Includes `ForEach` and `TransformReduce` for parallel operations on ranges.
--   **Automatic Thread Management:** Manages a pool of worker threads to execute tasks concurrently.
--   **Cross-Platform:** Built with CMake for cross-platform compatibility.
+- **Simple and Modern C++17 Interface:** Easy to integrate and use.
+- **Task Enqueuing:** Enqueue any callable object (functions, lambdas, functors) and get a `std::future` back.
+- **Parallel For-Each:** Apply a function to a range of elements in parallel.
+- **Parallel Transform-Reduce:** Parallelize the map-reduce pattern.
+- **Automatic Thread Management:** The pool manages the lifecycle of threads.
+- **Header-Only Option:** Can be used as a header-only library for easy integration.
+- **Extensively Tested:** Comes with a comprehensive suite of unit tests using Google Test.
 
-## Requirements
+## Getting Started
 
--   CMake (version 3.10 or later)
--   A C++17 compatible compiler (e.g., GCC, Clang, MSVC)
+### Prerequisites
 
-## How to Build
+- C++17 compatible compiler (e.g., GCC, Clang, MSVC)
+- CMake 3.10 or higher
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd cpp-thread-pool
-    ```
+### Building
 
-2.  **Create a build directory:**
-    ```bash
-    mkdir build
-    cd build
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/geb0598/cpp-thread-pool.git
+   cd cpp-thread-pool
+   ```
 
-3.  **Configure with CMake:**
-    ```bash
-    cmake ..
-    ```
-    *On Windows, you may need to specify a generator, e.g., `cmake .. -G "Visual Studio 17 2022"`.*
+2. **Create a build directory:**
+   ```bash
+   mkdir build
+   cd build
+   ```
 
-4.  **Compile the project:**
-    ```bash
-    cmake --build .
-    ```
-    *Alternatively, you can use the native build system (e.g., `make` on Linux/macOS or open the `.sln` file in Visual Studio on Windows).*
+3. **Configure and build the project:**
+   ```bash
+   cmake ..
+   cmake --build .
+   ```
 
-## Running the Demo
+## Usage
 
-The demo program showcases the thread pool's features and includes a performance benchmark.
+### Basic Task Enqueuing
 
-After building the project, you can run the demo from the `build` directory:
+```cpp
+#include "thread_pool.h"
+#include <iostream>
 
-```bash
-# On Linux or macOS
-./demo/thread_pool_demo
+int main() {
+    ThreadPool pool;
 
-# On Windows
-.\demo\Debug\thread_pool_demo.exe
+    auto future = pool.Enqueue([]() {
+        return 42;
+    });
+
+    std::cout << "The answer is: " << future.get() << std::endl;
+
+    return 0;
+}
 ```
 
-## Running Tests
+### Parallel For-Each
 
-The project uses GoogleTest for unit testing. To run the tests, you can use CTest from the `build` directory:
+```cpp
+#include "thread_pool.h"
+#include <iostream>
+#include <vector>
+
+int main() {
+    ThreadPool pool;
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+    pool.ForEach(numbers.begin(), numbers.end(), [](int& n) {
+        n *= 2;
+    });
+
+    for (int n : numbers) {
+        std::cout << n << " ";
+    }
+    // Output: 2 4 6 8 10
+
+    return 0;
+}
+```
+
+### Parallel Transform-Reduce
+
+```cpp
+#include "thread_pool.h"
+#include <iostream>
+#include <vector>
+#include <numeric>
+
+int main() {
+    ThreadPool pool;
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+    int sum_of_squares = pool.TransformReduce(numbers.begin(), numbers.end(), 0,
+        [](int n) { return n * n; },
+        std::plus<int>()
+    );
+
+    std::cout << "Sum of squares: " << sum_of_squares << std::endl;
+    // Output: Sum of squares: 55
+
+    return 0;
+}
+```
+
+## Building and Testing
+
+All build commands should be run from the `build` directory. If you haven't already, create it and move into it:
 
 ```bash
-ctest
+mkdir build
+cd build
 ```
+
+From within the `build` directory, you can build the project and run the tests:
+
+1. **Build the project:**
+   ```bash
+   cmake --build .
+   ```
+
+2. **Run the tests:**
+   ```bash
+   ctest
+   ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgements
+
+This project is heavily inspired by the thread pool implementation from [progschj/ThreadPool](https://github.com/progschj/ThreadPool).
